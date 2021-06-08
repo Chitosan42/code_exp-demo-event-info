@@ -1,33 +1,56 @@
-import * as React from "react";
-import { Text, View } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import React from 'react';
+import { createStackNavigator } from 'react-navigation-stack';
+import { createBottomTabNavigator } from 'react-navigation-tabs';
+import {
+  createAppContainer,
+  createSwitchNavigator
+} from "react-navigation";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import Example, { EmptyScreen } from "./screens/Example";
+import { StatusBar } from 'react-native';
 
-function HomeScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Home!</Text>
-    </View>
-  );
-}
+const SlowStack = createStackNavigator({
+  SlowExample: { screen: Example, params: { tabBarVisible: true } },
+  Details: {
+    screen: EmptyScreen,
+    navigationOptions: {
+      headerTitle: "Slow on Close"
+    },
+    params: { tabBarVisible: false }
+  }
+});
 
-function SettingsScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Settings!</Text>
-    </View>
-  );
-}
+SlowStack.navigationOptions = ({ navigation }: any) => {
+  // console.warn('SlowStack')
+  const { params = { tabBarVisible: true } } = navigation.state.routes[navigation.state.index];
+  return {
+    tabBarLabel: 'SlowStack',
+    tabBarVisible: params.tabBarVisible // The change on the visibility of tabBar generates the laggy transition
+  };
+};
 
-const Tab = createBottomTabNavigator();
+const MainTabs = createBottomTabNavigator({
+  SlowStack: {
+    screen: SlowStack,
+    navigationOptions: {
+      tabBarLabel: "SlowStack"
+    }
+  },
+});
 
-export default function App() {
-  return (
-    <NavigationContainer>
-      <Tab.Navigator>
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Settings" component={SettingsScreen} />
-      </Tab.Navigator>
-    </NavigationContainer>
-  );
-}
+const AppSwitchNavigator = createSwitchNavigator({
+  Auth: {
+    screen: MainTabs
+  },
+});
+
+const AppNavigator = createAppContainer(AppSwitchNavigator);
+
+export const App = () => (
+  <SafeAreaProvider>
+    <StatusBar barStyle="dark-content" />
+    <AppNavigator />
+  </SafeAreaProvider>
+)
+
+export default App;
